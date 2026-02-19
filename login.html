@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login</title>
+
+  <style>
+    /* Reset and Base Styles */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #ffffff;
+      overflow: hidden; 
+    }
+
+    /* Video Background */
+    #bg-video {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      min-width: 100%;
+      min-height: 100%;
+      width: auto;
+      height: auto;
+      z-index: -2;
+      transform: translateX(-50%) translateY(-50%);
+      object-fit: cover; 
+    }
+
+    /* Dark Overlay for Readability */
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7); 
+      z-index: -1;
+    }
+
+    /* Modern Glassmorphism Container */
+    .glass-container {
+      background: rgba(20, 20, 20, 0.4);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      padding: 40px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    }
+
+    h2 {
+      margin-bottom: 5px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      color: #bbbbbb;
+      margin-bottom: 30px;
+      display: block;
+      letter-spacing: 1px;
+    }
+
+    /* Form Inputs */
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px 16px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+      font-size: 15px;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      font-family: inherit;
+    }
+
+    input::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #ffffff;
+      background: rgba(255, 255, 255, 0.1);
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+    }
+
+    /* Modern Button */
+    button {
+      width: 100%;
+      padding: 15px;
+      background: #ffffff;
+      color: #000000;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 16px;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    button:hover {
+      background: #e0e0e0;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(255, 255, 255, 0.2);
+    }
+  </style>
+</head>
+
+<body>
+
+<video autoplay muted loop playsinline id="bg-video">
+  <source src="https://www.w3schools.com/howto/rain.mp4" type="video/mp4">
+</video>
+<div class="overlay"></div>
+
+<div class="glass-container">
+  <h2>Kendrick Artists</h2>
+  <span class="subtitle">Secure Admin Access</span>
+
+  <div class="input-group">
+    <input type="email" id="email" placeholder="Email Address">
+    <input type="password" id="password" placeholder="Password">
+  </div>
+
+  <button onclick="login()" id="loginBtn">Login</button>
+</div>
+
+<script type="module">
+import { auth } from "./firebase.js";
+import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+async function login() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  const loginBtn = document.getElementById("loginBtn");
+
+  // Prevent empty submissions
+  if(!email || !password) {
+    alert("Please enter both email and password.");
+    return;
+  }
+
+  try {
+    // UX improvement: Change button text while authenticating
+    loginBtn.innerText = "Authenticating...";
+    
+    await signInWithEmailAndPassword(auth, email, password);
+    window.location.href = "admin.html";
+    
+  } catch (error) {
+    loginBtn.innerText = "Login"; // Reset button text on failure
+    console.error("Login Error: ", error.message);
+    alert("Invalid email or password. Please try again.");
+  }
+}
+
+window.login = login;
+</script>
+
+</body>
+</html>
