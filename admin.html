@@ -15,12 +15,13 @@
 
     body {
       font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      height: 100vh;
+      min-height: 100vh;
       display: flex;
       justify-content: center;
-      align-items: center;
+      align-items: flex-start; /* Changed to allow scrolling for long content */
+      padding: 40px 20px;
       color: #ffffff;
-      overflow: hidden; 
+      overflow-y: auto; 
     }
 
     /* Video Background */
@@ -44,7 +45,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.7); /* Slightly darker for the admin panel */
+      background: rgba(0, 0, 0, 0.75); 
       z-index: -1;
     }
 
@@ -57,9 +58,12 @@
       border-radius: 20px;
       padding: 40px;
       width: 100%;
-      max-width: 450px;
-      text-align: center;
+      max-width: 500px;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    }
+
+    .header-text {
+      text-align: center;
     }
 
     h2 {
@@ -67,6 +71,14 @@
       font-weight: 600;
       letter-spacing: 1.5px;
       text-transform: uppercase;
+    }
+
+    h3 {
+      font-size: 1.1rem;
+      margin: 30px 0 15px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      padding-bottom: 8px;
+      letter-spacing: 1px;
     }
 
     .subtitle {
@@ -85,7 +97,8 @@
       margin-bottom: 25px;
     }
 
-    input, textarea {
+    /* Target all input types including the new date and select */
+    input, textarea, select {
       width: 100%;
       padding: 14px 16px;
       background: rgba(255, 255, 255, 0.05);
@@ -95,13 +108,19 @@
       border-radius: 8px;
       transition: all 0.3s ease;
       font-family: inherit;
+      color-scheme: dark; /* Helps native date picker icons match dark mode */
+    }
+
+    select option {
+      background: #222;
+      color: #fff;
     }
 
     input::placeholder, textarea::placeholder {
       color: rgba(255, 255, 255, 0.5);
     }
 
-    input:focus, textarea:focus {
+    input:focus, textarea:focus, select:focus {
       outline: none;
       border-color: #ffffff;
       background: rgba(255, 255, 255, 0.1);
@@ -110,7 +129,7 @@
 
     textarea {
       resize: vertical;
-      min-height: 100px;
+      min-height: 80px;
     }
 
     /* Modern Button */
@@ -122,7 +141,7 @@
       border: none;
       font-weight: bold;
       cursor: pointer;
-      font-size: 16px;
+      font-size: 14px;
       border-radius: 8px;
       transition: all 0.3s ease;
       text-transform: uppercase;
@@ -133,6 +152,37 @@
       background: #e0e0e0;
       transform: translateY(-2px);
       box-shadow: 0 5px 15px rgba(255, 255, 255, 0.2);
+    }
+
+    /* Payment History Cards */
+    #paymentList {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .history-card {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 15px;
+      font-size: 0.9rem;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .history-card span {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .status-badge {
+      text-transform: uppercase;
+      font-size: 0.8rem;
+      font-weight: bold;
+      padding: 3px 8px;
+      border-radius: 4px;
     }
   </style>
 </head>
@@ -145,21 +195,43 @@
 <div class="overlay"></div>
 
 <div class="glass-container">
-  <h2>Kendrick Artists</h2>
-  <span class="subtitle">Admin Dashboard</span>
-
-  <div class="input-group">
-    <input type="number" id="maintenance" placeholder="Monthly Maintenance ($)">
-    <input type="number" id="extras" placeholder="Extras ($)">
-    <textarea id="description" placeholder="Project / Invoice Description"></textarea>
-    <input type="url" id="paymentLink" placeholder="Payment Link (e.g., Payoneer)">
+  
+  <div class="header-text">
+    <h2>Kendrick Artists</h2>
+    <span class="subtitle">Admin Dashboard</span>
   </div>
 
-  <button onclick="saveData()">Save Record</button>
+  <div class="input-group">
+    <input type="number" id="maintenance" placeholder="Monthly Maintenance (₹)">
+    <input type="number" id="extras" placeholder="Extras (₹)">
+    <textarea id="description" placeholder="Project / Invoice Description"></textarea>
+    <input type="url" id="paymentLink" placeholder="Payment Link (e.g., Payoneer)">
+    <button onclick="saveData()">Save Main Record</button>
+  </div>
+
+  <h3>Add Payment to Tracker</h3>
+  <div class="input-group">
+    <input type="date" id="pDate">
+    <input type="number" id="pMaintenance" placeholder="Maintenance Amount (₹)">
+    <input type="number" id="pExtras" placeholder="Extras Amount (₹)">
+    
+    <select id="pStatus">
+      <option value="incoming">Incoming</option>
+      <option value="paid">Paid</option>
+      <option value="failed">Failed</option>
+    </select>
+    
+    <button onclick="addPayment()">Log Payment</button>
+  </div>
+
+  <h3>Payment History</h3>
+  <div id="paymentList">
+    </div>
+
 </div>
 
 <script type="module">
-import { db, auth, doc, setDoc } from "./firebase.js";
+import { db, auth, doc, setDoc, collection, addDoc, getDocs } from "./firebase.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 // Check Authentication
@@ -169,21 +241,20 @@ onAuthStateChanged(auth, (user) => {
   }
 });
 
-// Save Data Function
+// --- Function 1: Save Main Record ---
 async function saveData() {
   const maintenance = document.getElementById("maintenance").value;
   const extras = document.getElementById("extras").value;
   const description = document.getElementById("description").value;
   const paymentLink = document.getElementById("paymentLink").value;
 
-  // Basic validation to prevent saving empty fields
   if(!maintenance || !description) {
     alert("Please fill in at least the maintenance and description fields.");
     return;
   }
 
   try {
-    const saveBtn = document.querySelector('button');
+    const saveBtn = document.querySelector('button[onclick="saveData()"]');
     saveBtn.innerText = "Saving...";
     
     await setDoc(doc(db, "clients", "client1"), {
@@ -193,8 +264,8 @@ async function saveData() {
       paymentLink: paymentLink
     });
 
-    saveBtn.innerText = "Save Record";
-    alert("Saved successfully");
+    saveBtn.innerText = "Save Main Record";
+    alert("Main record saved successfully");
     
   } catch (error) {
     console.error("Error saving document: ", error);
@@ -202,8 +273,98 @@ async function saveData() {
   }
 }
 
-// Make function available globally for the onclick handler
+// --- Function 2: Add Payment to Sub-collection ---
+async function addPayment() {
+  const date = document.getElementById("pDate").value;
+  const maintenance = Number(document.getElementById("pMaintenance").value);
+  const extras = Number(document.getElementById("pExtras").value);
+  const status = document.getElementById("pStatus").value;
+
+  if(!date) {
+    alert("Please select a date.");
+    return;
+  }
+
+  const addBtn = document.querySelector('button[onclick="addPayment()"]');
+  addBtn.innerText = "Logging...";
+
+  const total = maintenance + extras;
+
+  try {
+    await addDoc(collection(db, "clients", "client1", "payments"), {
+      date: date,
+      maintenance: maintenance,
+      extras: extras,
+      total: total,
+      status: status
+    });
+
+    addBtn.innerText = "Log Payment";
+    
+    // Clear the form fields after successful entry
+    document.getElementById("pMaintenance").value = "";
+    document.getElementById("pExtras").value = "";
+    
+    // Reload the visual list
+    loadPayments(); 
+
+  } catch (error) {
+    console.error("Error adding payment: ", error);
+    alert("Error logging payment.");
+    addBtn.innerText = "Log Payment";
+  }
+}
+
+// --- Function 3: Load Payment History ---
+async function loadPayments() {
+  const list = document.getElementById("paymentList");
+  list.innerHTML = "Loading history...";
+
+  try {
+    const querySnapshot = await getDocs(
+      collection(db, "clients", "client1", "payments")
+    );
+
+    list.innerHTML = "";
+
+    if (querySnapshot.empty) {
+      list.innerHTML = "<p style='color: #aaa; font-size: 0.9rem;'>No payments recorded yet.</p>";
+      return;
+    }
+
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      
+      // Determine badge color based on status
+      let badgeColor = "#ffffff";
+      if (data.status === "paid") badgeColor = "#4CAF50";
+      if (data.status === "incoming") badgeColor = "#FFC107";
+      if (data.status === "failed") badgeColor = "#F44336";
+
+      // Insert stylized history card
+      list.innerHTML += `
+        <div class="history-card">
+          <span><strong>Date:</strong> ${data.date}</span>
+          <span><strong>Maintenance:</strong> ₹${data.maintenance}</span>
+          <span><strong>Extras:</strong> ₹${data.extras}</span>
+          <span><strong>Total:</strong> ₹${data.total}</span>
+          <span><strong>Status:</strong> <span class="status-badge" style="color: ${badgeColor};">${data.status}</span></span>
+        </div>
+      `;
+    });
+  } catch (error) {
+    console.error("Error loading payments: ", error);
+    list.innerHTML = "Failed to load history.";
+  }
+}
+
+// Make functions available globally for HTML onclick attributes
 window.saveData = saveData;
+window.addPayment = addPayment;
+
+// Initialize data on page load
+loadPayments();
+
 </script>
 
 </body>

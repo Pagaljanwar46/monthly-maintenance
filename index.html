@@ -15,12 +15,13 @@
 
     body {
       font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      height: 100vh;
+      min-height: 100vh;
       display: flex;
       justify-content: center;
-      align-items: center;
+      align-items: flex-start;
+      padding: 40px 20px;
       color: #ffffff;
-      overflow: hidden; /* Prevents scrolling if video is slightly larger */
+      overflow-y: auto; 
     }
 
     /* Video Background */
@@ -34,7 +35,7 @@
       height: auto;
       z-index: -2;
       transform: translateX(-50%) translateY(-50%);
-      object-fit: cover; /* Ensures the video covers the screen without stretching */
+      object-fit: cover; 
     }
 
     /* Dark Overlay for Readability */
@@ -44,27 +45,36 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.6); /* Adjust opacity to make video darker/lighter */
+      background: rgba(0, 0, 0, 0.7); 
       z-index: -1;
     }
 
     /* Modern Glassmorphism Card */
     .glass-card {
       background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       border: 1px solid rgba(255, 255, 255, 0.2);
       border-radius: 16px;
       padding: 40px;
       width: 100%;
-      max-width: 400px;
+      max-width: 450px; 
       text-align: center;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     }
 
     h2 {
-      margin-bottom: 30px;
+      margin-bottom: 5px;
       font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      color: #bbbbbb;
+      margin-bottom: 30px;
+      display: block;
       letter-spacing: 1px;
     }
 
@@ -76,6 +86,15 @@
       padding: 15px 0;
       border-bottom: 1px solid rgba(255, 255, 255, 0.15);
       font-size: 1.1rem;
+      gap: 10px; /* Prevents text from colliding on narrow screens */
+    }
+
+    .invoice-row span {
+      text-align: left;
+    }
+
+    .invoice-row strong {
+      text-align: right;
     }
 
     .description-box {
@@ -97,6 +116,7 @@
     #description {
       font-size: 0.95rem;
       line-height: 1.5;
+      word-wrap: break-word; /* Ensures long text doesn't stretch the card */
     }
 
     /* Modern Button */
@@ -113,12 +133,109 @@
       transition: all 0.3s ease;
       text-transform: uppercase;
       letter-spacing: 1px;
+      margin-bottom: 30px;
     }
 
     button:hover {
       background: #e0e0e0;
       transform: translateY(-2px);
       box-shadow: 0 5px 15px rgba(255, 255, 255, 0.2);
+    }
+
+    /* History Section */
+    .divider {
+      border: none;
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      margin-bottom: 20px;
+    }
+
+    .history-title {
+      font-size: 1.1rem;
+      margin-bottom: 15px;
+      letter-spacing: 1px;
+    }
+
+    #paymentList {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .history-card {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 15px;
+      font-size: 0.9rem;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      text-align: left;
+    }
+
+    .history-card .row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      word-wrap: break-word;
+    }
+
+    .status-badge {
+      text-transform: uppercase;
+      font-size: 0.8rem;
+      font-weight: bold;
+      padding: 3px 8px;
+      border-radius: 4px;
+      text-align: center;
+    }
+
+    /* --- MOBILE RESPONSIVE MEDIA QUERIES --- */
+    @media screen and (max-width: 480px) {
+      body {
+        padding: 20px 15px; /* Less outer margin on mobile */
+      }
+
+      .glass-card {
+        padding: 25px 20px; /* Less inner padding to maximize screen real estate */
+      }
+
+      h2 {
+        font-size: 1.25rem; /* Slightly smaller header */
+      }
+
+      .invoice-row {
+        font-size: 1rem; /* Shrink invoice text slightly */
+      }
+
+      .description-box {
+        padding: 12px;
+      }
+
+      button {
+        padding: 14px;
+        font-size: 15px;
+      }
+
+      .history-card {
+        font-size: 0.85rem;
+        padding: 12px;
+      }
+
+      /* Stack the history card row elements if they get too tight on very small screens */
+      .history-card .row {
+        flex-direction: column;
+        gap: 2px;
+      }
+      
+      .history-card .row span {
+        font-weight: 500;
+        color: #e0e0e0;
+      }
+
+      .status-badge {
+        width: fit-content;
+        margin-top: 4px;
+      }
     }
   </style>
 </head>
@@ -131,7 +248,8 @@
 <div class="overlay"></div>
 
 <div class="glass-card">
-  <h2>Payment Portal</h2>
+  <h2>Kendrick Artists</h2>
+  <span class="subtitle">Client Payment Portal</span>
 
   <div class="invoice-row">
     <span>Monthly Maintenance</span>
@@ -149,10 +267,17 @@
   </div>
 
   <button id="payBtn">Pay Now</button>
+
+  <hr class="divider">
+  
+  <h3 class="history-title">Payment History</h3>
+  <div id="paymentList">
+    <p style="color: #aaa; font-size: 0.9rem;">Loading records...</p>
+  </div>
 </div>
 
 <script type="module">
-import { db, doc, getDoc } from "./firebase.js";
+import { db, doc, getDoc, collection, getDocs } from "./firebase.js";
 
 async function loadData() {
   const docRef = doc(db, "clients", "client1");
@@ -161,9 +286,8 @@ async function loadData() {
   if (docSnap.exists()) {
     const data = docSnap.data();
 
-    // The IDs match the HTML exactly, so your backend logic remains unbroken
-    document.getElementById("maintenance").innerText = "$ " + data.maintenance;
-    document.getElementById("extras").innerText = "$ " + data.extras;
+    document.getElementById("maintenance").innerText = "₹ " + data.maintenance;
+    document.getElementById("extras").innerText = "₹ " + data.extras;
     document.getElementById("description").innerText = data.description;
 
     document.getElementById("payBtn").onclick = function() {
@@ -174,7 +298,57 @@ async function loadData() {
   }
 }
 
+async function loadPayments() {
+  const list = document.getElementById("paymentList");
+
+  try {
+    const querySnapshot = await getDocs(
+      collection(db, "clients", "client1", "payments")
+    );
+
+    list.innerHTML = ""; 
+
+    if (querySnapshot.empty) {
+      list.innerHTML = "<p style='color: #aaa; font-size: 0.9rem;'>No previous payments found.</p>";
+      return;
+    }
+
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+
+      let badgeColor = "#ffffff";
+      if (data.status === "paid") badgeColor = "#4CAF50";
+      if (data.status === "incoming") badgeColor = "#FFC107";
+      if (data.status === "failed") badgeColor = "#F44336";
+
+      list.innerHTML += `
+        <div class="history-card">
+          <div class="row">
+            <strong>Date:</strong> <span>${data.date}</span>
+          </div>
+          <div class="row">
+            <strong>Maintenance:</strong> <span>₹${data.maintenance}</span>
+          </div>
+          <div class="row">
+            <strong>Extras:</strong> <span>₹${data.extras}</span>
+          </div>
+          <div class="row" style="margin-top: 5px; padding-top: 5px; border-top: 1px solid rgba(255,255,255,0.1);">
+            <strong>Total:</strong> <span>₹${data.total}</span>
+          </div>
+          <div class="row" style="margin-top: 5px;">
+            <strong>Status:</strong> <span class="status-badge" style="color: ${badgeColor}; border: 1px solid ${badgeColor};">${data.status}</span>
+          </div>
+        </div>
+      `;
+    });
+  } catch (error) {
+    console.error("Error fetching history:", error);
+    list.innerHTML = "<p style='color: #ff4d4d;'>Error loading history.</p>";
+  }
+}
+
 loadData();
+loadPayments();
 </script>
 
 </body>
