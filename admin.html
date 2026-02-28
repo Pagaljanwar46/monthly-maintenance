@@ -184,6 +184,37 @@
       padding: 3px 8px;
       border-radius: 4px;
     }
+
+    /* -------- EDIT MODAL -------- */
+#editModal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.85);
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.modal-box {
+  background: rgba(20,20,20,0.95);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 15px;
+  padding: 30px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
   </style>
 </head>
 
@@ -199,6 +230,33 @@
   <div class="header-text">
     <h2>Kendrick Artists</h2>
     <span class="subtitle">Admin Dashboard</span>
+
+    <!-- EDIT PAYMENT MODAL -->
+<div id="editModal">
+  <div class="modal-box">
+    <h3>Edit Payment</h3>
+
+    <div class="input-group">
+      <input type="date" id="editDate">
+      <input type="number" id="editMaintenance" placeholder="Maintenance (₹)">
+      <input type="number" id="editExtras" placeholder="Extras (₹)">
+      
+     <select id="editStatus">
+  <option value="incoming">Incoming</option>
+  <option value="pending">Pending</option>
+  <option value="paid">Paid</option>
+  <option value="failed">Failed</option>
+</select>
+    </div>
+
+    <div class="modal-actions">
+      <button onclick="updatePayment()" style="flex:1;">Update</button>
+      <button onclick="closeModal()" style="flex:1; background:#444; color:white;">
+        Cancel
+      </button>
+    </div>
+  </div>
+</div>
   </div>
 
   <div class="input-group">
@@ -231,96 +289,107 @@
 </div>
 
 <script type="module">
-import { db, auth, doc, setDoc, collection, addDoc, getDocs } from "./firebase.js";
+import { 
+  db, 
+  auth, 
+  doc, 
+  setDoc, 
+  collection, 
+  addDoc, 
+  getDocs,
+  deleteDoc,
+  updateDoc,
+  getDoc
+} from "./firebase.js";
+
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-// Check Authentication
+
+// ---------------- AUTH CHECK ----------------
 onAuthStateChanged(auth, (user) => {
   if (!user) {
     window.location.href = "login.html";
   }
 });
 
-// --- Function 1: Save Main Record ---
+
+// ---------------- SAVE MAIN RECORD ----------------
 async function saveData() {
+
   const maintenance = document.getElementById("maintenance").value;
   const extras = document.getElementById("extras").value;
   const description = document.getElementById("description").value;
   const paymentLink = document.getElementById("paymentLink").value;
 
-  if(!maintenance || !description) {
-    alert("Please fill in at least the maintenance and description fields.");
+  if (!maintenance || !description) {
+    alert("Please fill maintenance and description");
     return;
   }
 
   try {
-    const saveBtn = document.querySelector('button[onclick="saveData()"]');
-    saveBtn.innerText = "Saving...";
-    
+
     await setDoc(doc(db, "clients", "client1"), {
       maintenance: Number(maintenance),
       extras: Number(extras),
-      description: description,
-      paymentLink: paymentLink
+      description,
+      paymentLink
     });
 
-    saveBtn.innerText = "Save Main Record";
-    alert("Main record saved successfully");
-    
+    alert("Main record saved");
+
   } catch (error) {
-    console.error("Error saving document: ", error);
-    alert("Error saving data. Check console.");
+    console.error(error);
+    alert("Error saving data");
   }
 }
 
-// --- Function 2: Add Payment to Sub-collection ---
+
+// ---------------- ADD PAYMENT ----------------
 async function addPayment() {
+
   const date = document.getElementById("pDate").value;
   const maintenance = Number(document.getElementById("pMaintenance").value);
   const extras = Number(document.getElementById("pExtras").value);
   const status = document.getElementById("pStatus").value;
 
-  if(!date) {
-    alert("Please select a date.");
+  if (!date) {
+    alert("Please select date");
     return;
   }
-
-  const addBtn = document.querySelector('button[onclick="addPayment()"]');
-  addBtn.innerText = "Logging...";
 
   const total = maintenance + extras;
 
   try {
+
     await addDoc(collection(db, "clients", "client1", "payments"), {
-      date: date,
-      maintenance: maintenance,
-      extras: extras,
-      total: total,
-      status: status
+      date,
+      maintenance,
+      extras,
+      total,
+      status
     });
 
-    addBtn.innerText = "Log Payment";
-    
-    // Clear the form fields after successful entry
     document.getElementById("pMaintenance").value = "";
     document.getElementById("pExtras").value = "";
-    
-    // Reload the visual list
-    loadPayments(); 
+    document.getElementById("pDate").value = "";
+
+    loadPayments();
 
   } catch (error) {
-    console.error("Error adding payment: ", error);
-    alert("Error logging payment.");
-    addBtn.innerText = "Log Payment";
+    console.error(error);
+    alert("Error logging payment");
   }
 }
 
-// --- Function 3: Load Payment History ---
+
+// ---------------- LOAD PAYMENTS ----------------
 async function loadPayments() {
+
   const list = document.getElementById("paymentList");
   list.innerHTML = "Loading history...";
 
   try {
+
     const querySnapshot = await getDocs(
       collection(db, "clients", "client1", "payments")
     );
@@ -328,44 +397,138 @@ async function loadPayments() {
     list.innerHTML = "";
 
     if (querySnapshot.empty) {
-      list.innerHTML = "<p style='color: #aaa; font-size: 0.9rem;'>No payments recorded yet.</p>";
+      list.innerHTML = "<p style='color:#aaa;'>No payments recorded yet.</p>";
       return;
     }
 
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      
-      // Determine badge color based on status
+    querySnapshot.forEach((docSnap) => {
+
+      const data = docSnap.data();
+      const id = docSnap.id;
+
       let badgeColor = "#ffffff";
       if (data.status === "paid") badgeColor = "#4CAF50";
-      if (data.status === "incoming") badgeColor = "#FFC107";
-      if (data.status === "failed") badgeColor = "#F44336";
+if (data.status === "incoming") badgeColor = "#03A9F4";   // blue for incoming
+if (data.status === "pending") badgeColor = "#FFC107";    // yellow for pending
+if (data.status === "failed") badgeColor = "#F44336";
 
-      // Insert stylized history card
       list.innerHTML += `
         <div class="history-card">
           <span><strong>Date:</strong> ${data.date}</span>
           <span><strong>Maintenance:</strong> ₹${data.maintenance}</span>
           <span><strong>Extras:</strong> ₹${data.extras}</span>
           <span><strong>Total:</strong> ₹${data.total}</span>
-          <span><strong>Status:</strong> <span class="status-badge" style="color: ${badgeColor};">${data.status}</span></span>
+          <span>
+            <strong>Status:</strong>
+            <span class="status-badge" style="color:${badgeColor}">
+              ${data.status}
+            </span>
+          </span>
+
+          <div style="margin-top:10px; display:flex; gap:10px;">
+            <button onclick="editPayment('${id}')" style="flex:1;">Edit</button>
+            <button onclick="deletePayment('${id}')" 
+              style="flex:1; background:#F44336; color:white;">
+              Delete
+            </button>
+          </div>
         </div>
       `;
     });
+
   } catch (error) {
-    console.error("Error loading payments: ", error);
-    list.innerHTML = "Failed to load history.";
+    console.error(error);
+    list.innerHTML = "Failed to load history";
   }
 }
 
-// Make functions available globally for HTML onclick attributes
+
+// ---------------- DELETE PAYMENT ----------------
+async function deletePayment(id) {
+
+  const confirmDelete = confirm("Are you sure?");
+  if (!confirmDelete) return;
+
+  try {
+    await deleteDoc(doc(db, "clients", "client1", "payments", id));
+    loadPayments();
+  } catch (error) {
+    console.error(error);
+    alert("Delete failed");
+  }
+}
+
+
+// ---------------- PROFESSIONAL EDIT SYSTEM ----------------
+
+let currentEditId = null;
+
+async function editPayment(id) {
+
+  try {
+
+    const paymentRef = doc(db, "clients", "client1", "payments", id);
+    const snapshot = await getDoc(paymentRef);
+
+    if (!snapshot.exists()) return;
+
+    const data = snapshot.data();
+
+    currentEditId = id;
+
+    document.getElementById("editDate").value = data.date;
+    document.getElementById("editMaintenance").value = data.maintenance;
+    document.getElementById("editExtras").value = data.extras;
+    document.getElementById("editStatus").value = data.status;
+
+    document.getElementById("editModal").style.display = "flex";
+
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+function closeModal() {
+  document.getElementById("editModal").style.display = "none";
+}
+
+async function updatePayment() {
+
+  const date = document.getElementById("editDate").value;
+  const maintenance = Number(document.getElementById("editMaintenance").value);
+  const extras = Number(document.getElementById("editExtras").value);
+  const status = document.getElementById("editStatus").value;
+
+  const total = maintenance + extras;
+
+  try {
+
+    await updateDoc(
+      doc(db, "clients", "client1", "payments", currentEditId),
+      { date, maintenance, extras, total, status }
+    );
+
+    closeModal();
+    loadPayments();
+
+  } catch (error) {
+    console.error(error);
+    alert("Update failed");
+  }
+}
+
+
+// ---------------- GLOBAL ACCESS ----------------
 window.saveData = saveData;
 window.addPayment = addPayment;
+window.deletePayment = deletePayment;
+window.editPayment = editPayment;
+window.updatePayment = updatePayment;
+window.closeModal = closeModal;
 
-// Initialize data on page load
+// ---------------- INITIAL LOAD ----------------
 loadPayments();
 
 </script>
-
 </body>
 </html>

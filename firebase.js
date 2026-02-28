@@ -1,4 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+
 import { 
   getFirestore, 
   doc, 
@@ -6,9 +7,13 @@ import {
   setDoc,
   collection,
   addDoc,
-  getDocs
+  getDocs,
+  deleteDoc,
+  updateDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
 
 const firebaseConfig = {
   apiKey: "AIzaSyA16aGvMC6C5paU2VTVGwVfIn28d3F_Nhw",
@@ -19,8 +24,20 @@ const firebaseConfig = {
   appId: "1:1097895941676:web:268917b9c94261e2bfe389"
 };
 
+
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-export { db, auth, doc, getDoc, setDoc, collection, addDoc, getDocs };
+export { 
+  db, 
+  auth, 
+  doc, 
+  getDoc, 
+  setDoc, 
+  collection, 
+  addDoc, 
+  getDocs,
+  deleteDoc,
+  updateDoc
+};

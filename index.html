@@ -317,9 +317,19 @@ async function loadPayments() {
       const data = doc.data();
 
       let badgeColor = "#ffffff";
-      if (data.status === "paid") badgeColor = "#4CAF50";
-      if (data.status === "incoming") badgeColor = "#FFC107";
-      if (data.status === "failed") badgeColor = "#F44336";
+
+if (data.status === "paid") {
+  badgeColor = "#4CAF50"; // green
+}
+else if (data.status === "incoming") {
+  badgeColor = "#03A9F4"; // blue
+}
+else if (data.status === "pending") {
+  badgeColor = "#FFC107"; // yellow
+}
+else if (data.status === "failed") {
+  badgeColor = "#F44336"; // red
+}
 
       list.innerHTML += `
         <div class="history-card">
@@ -336,7 +346,7 @@ async function loadPayments() {
             <strong>Total:</strong> <span>₹${data.total}</span>
           </div>
           <div class="row" style="margin-top: 5px;">
-            <strong>Status:</strong> <span class="status-badge" style="color: ${badgeColor}; border: 1px solid ${badgeColor};">${data.status}</span>
+            <strong>Status:</strong> <span class="status-badge" style="background:${badgeColor}; color:#000;">${data.status}</span>
           </div>
         </div>
       `;
